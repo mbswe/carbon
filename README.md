@@ -10,7 +10,7 @@ To interact with the Carbon CLI, you will be using the following commands:
 
 To start tracking time on a new project, use the `start` command followed by the title of your project. 
 
-`carbon start --title "Your Project Title"`
+`carbon start "Your Project Title"`
 
 ### Pause
 
