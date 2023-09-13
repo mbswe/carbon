@@ -1,3 +1,4 @@
+use std::{env, fs};
 use std::fs::{File, OpenOptions};
 use std::io::{self, Read, Write};
 use chrono::{Local, DateTime, Duration};
@@ -18,10 +19,11 @@ struct Session {
 }
 
 pub(crate) fn start(title: String) {
-    let file_path = "projects.json";
+    let file_path = get_file_path();
+
     let mut projects = vec![];
 
-    if let Ok(file) = File::open(file_path) {
+    if let Ok(file) = File::open(file_path.clone()) {
         let mut data = String::new();
         let mut reader = io::BufReader::new(file);
         reader.read_to_string(&mut data).unwrap_or_default();
@@ -57,7 +59,7 @@ pub(crate) fn start(title: String) {
 }
 
 pub(crate) fn stop(id: u32) {
-    let file_path = "projects.json";
+    let file_path = &get_file_path();
     let mut projects: Vec<Project> = read_projects_from_file(file_path);
 
     if let Some(project) = projects.iter_mut().find(|p| p.id == id) {
@@ -82,7 +84,7 @@ pub(crate) fn stop(id: u32) {
 }
 
 pub(crate) fn pause(id: u32) {
-    let file_path = "projects.json";
+    let file_path = &get_file_path();
     let mut projects: Vec<Project> = read_projects_from_file(file_path);
 
     if let Some(project) = projects.iter_mut().find(|p| p.id == id) {
@@ -103,7 +105,7 @@ pub(crate) fn pause(id: u32) {
 }
 
 pub(crate) fn resume(id: u32) {
-    let file_path = "projects.json";
+    let file_path = &get_file_path();
     let mut projects: Vec<Project> = read_projects_from_file(file_path);
 
     if let Some(project) = projects.iter_mut().find(|p| p.id == id) {
@@ -132,7 +134,7 @@ pub(crate) fn resume(id: u32) {
 }
 
 pub(crate) fn status() {
-    let file_path = "projects.json";
+    let file_path = &get_file_path();
     let projects: Vec<Project> = read_projects_from_file(file_path);
 
     for project in projects.iter().filter(|p| !p.completed) {
@@ -157,7 +159,7 @@ pub(crate) fn status() {
 }
 
 pub(crate) fn list_all() {
-    let file_path = "projects.json";
+    let file_path = &get_file_path();
     let projects: Vec<Project> = read_projects_from_file(file_path);
 
     for project in projects.iter().filter(|p| p.completed) {
@@ -180,7 +182,7 @@ pub(crate) fn list_yesterday() {
 }
 
 fn list_projects_on_date(date: DateTime<Local>) {
-    let file_path = "projects.json";
+    let file_path = &get_file_path();
     let projects: Vec<Project> = read_projects_from_file(file_path);
 
     let target_date = date.date_naive();
@@ -237,4 +239,15 @@ fn format_duration(duration: Duration) -> String {
     let minutes = (total_seconds % 3600) / 60;
     let seconds = total_seconds % 60;
     format!("{:02}:{:02}:{:02}", hours, minutes, seconds)
+}
+
+fn get_file_path() -> String {
+    let config_home = env::var("XDG_CONFIG_HOME").or_else(|_| env::var("HOME").map(|home|format!("{}/.config", home))).unwrap();
+    
+    // Create carbon directory if not exist
+    let carbon_dir = format!("{}/carbon", config_home);
+    fs::create_dir_all(carbon_dir).expect("Failed to create carbon directory");
+    
+    let file_path = "projects.json";
+    format!("{}/carbon/{}", config_home, file_path)
 }
